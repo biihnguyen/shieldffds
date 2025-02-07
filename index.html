@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SHIELD Flood Protection System">
+    <title>SHIELD Flood Protection System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #3c8dbc;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        nav {
+            background-color: #2b6a92;
+            padding: 10px;
+            text-align: center;
+        }
+        nav a {
+            color: white;
+            margin: 0 10px;
+            text-decoration: none;
+            padding: 8px 16px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        nav a:hover {
+            background-color: #3c8dbc;
+            border-radius: 4px;
+        }
+        main {
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        section {
+            display: none;
+            background-color: white;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        #monitoring {
+            display: block;
+        }
+        footer {
+            background-color: #3c8dbc;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+        }
+        .monitoring {
+            background-color: #e7f3fe;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+      import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-database.js";
+      
+      const firebaseConfig = {
+        apiKey: "AIzaSyB3oRbDh1tXf10Iqv2MDvWQNCpXqXpXhqk",
+        authDomain: "shield-2f2b3.firebaseapp.com",
+        databaseURL: "https://shield-2f2b3-default-rtdb.firebaseio.com",
+        projectId: "shield-2f2b3",
+        storageBucket: "shield-2f2b3.appspot.com",
+        messagingSenderId: "848466052557",
+        appId: "1:848466052557:web:3d68c065b6f020c7123084"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const database = getDatabase(app);
+      const sensorRef = ref(database, 'sensorData');
+
+      let sensorValues = [];
+      let timeLabels = [];
+      let chart;
+
+      window.onload = function () {
+          const ctx = document.getElementById('waterLevelChart').getContext('2d');
+          chart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                  labels: timeLabels,
+                  datasets: [{
+                      label: 'Water Level (cm)',
+                      data: sensorValues,
+                      borderColor: 'rgba(60,141,188,1)',
+                      backgroundColor: 'rgba(60,141,188,0.2)',
+                      fill: true,
+                      tension: 0.4
+                  }]
+              },
+              options: {
+                  scales: {
+                      y: { beginAtZero: true }
+                  }
+              }
+          });
+
+          onValue(sensorRef, (snapshot) => {
+    let sensorValue = parseFloat(snapshot.val());
+    if (isNaN(sensorValue)) return;
+
+    const currentTime = new Date().toLocaleTimeString();
+    document.getElementById('sensorValue').innerText = `Current water level: ${sensorValue} cm`;
+    const floodStatusElement = document.getElementById('floodStatus');
+    floodStatusElement.innerText = sensorValue >= 20 ? 'Flood risk status: HIGH' : 'Flood risk status: LOW';
+    floodStatusElement.style.color = sensorValue >= 20 ? 'red' : 'black';
+
+    if (sensorValues.length >= 10) {
+        sensorValues.shift();
+        timeLabels.shift();
+    }
+    sensorValues.push(sensorValue);
+    timeLabels.push(currentTime);
+    chart.update();
+
+    if (sensorValues.length > 5) trainAndPredict(sensorValues); // 🔥 FIXED: Call the correct function
+});
+
+      };
+
+      async function trainAndPredict(sensorValues) {
+    if (sensorValues.length < 5) {
+        console.warn("Not enough data to train the model.");
+        return;
+    }
+
+    // Normalize data
+    const minVal = Math.min(...sensorValues);
+    const maxVal = Math.max(...sensorValues);
+
+    function normalize(value) {
+        return (value - minVal) / (maxVal - minVal);
+    }
+
+    function denormalize(value) {
+        return value * (maxVal - minVal) + minVal;
+    }
+
+    let model;
+
+    if (localStorage.getItem("floodModel")) {
+        console.log("Loading saved model...");
+        model = await tf.loadLayersModel("localstorage://floodModel");
+    } else {
+        console.log("Training new model...");
+        model = tf.sequential();
+        model.add(tf.layers.dense({ inputShape: [1], units: 10, activation: 'relu' }));
+        model.add(tf.layers.dense({ units: 1 }));
+        model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
+
+        const xs = tf.tensor(sensorValues.slice(0, -1).map((_, i) => [normalize(i)]));
+        const ys = tf.tensor(sensorValues.slice(1).map(value => [normalize(value)]));
+
+        await model.fit(xs, ys, { epochs: 50 });
+
+        await model.save("localstorage://floodModel");
+    }
+
+    // Predict next values
+    let futureValues = [];
+    let lastValue = normalize(sensorValues[sensorValues.length - 1]);
+
+    for (let i = 1; i <= 10; i++) {
+        const prediction = model.predict(tf.tensor([[lastValue]])).dataSync()[0];
+        lastValue = prediction;
+        futureValues.push(denormalize(prediction));
+    }
+
+    document.getElementById('prediction').innerText = 'Predicted water level in 60s: ' + futureValues[futureValues.length - 1].toFixed(2) + ' cm';
+
+    if (futureValues[futureValues.length - 1] >= 20) {
+        document.getElementById('predictionStatus').innerText = 'Predicted flood risk in 60s: HIGH';
+        document.getElementById('predictionStatus').style.color = 'red';
+    } else {
+        document.getElementById('predictionStatus').innerText = 'Predicted flood risk in 60s: LOW';
+        document.getElementById('predictionStatus').style.color = 'black';
+    }
+}
+
+
+    </script>
+</head>
+<body>
+    <header>
+        <h1>SHIELD-FFDS</h1>
+        <h2>Storm Hazard Immediate Evacuation & Life-saving Defense - Flash Flood Defense System</h2>
+    </header>
+    <nav>
+        <a onclick="showSection('monitoring')">Dashboard</a>
+        <a onclick="showSection('how-it-works')">How it Works</a>
+        <a onclick="showSection('features')">Features</a>
+        <a onclick="showSection('benefits')">Benefits</a>
+    </nav>
+    <main>
+        <section id="monitoring" class="monitoring">
+            <h2>Flood Monitoring Dashboard</h2>
+            <p id="sensorValue">Current water level: Loading...</p>
+            <p id="floodStatus">Flood risk status NOW: Loading...</p>
+        
+            <h3>Flood Sensor Map</h3>
+            <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1hpRNfF9gg34DO1SF3DpfSbbSkjKc7KI&ehbc=2E312F" 
+                    width="100%" height="250" style="border:0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+            </iframe>
+        
+            <h3>AI Prediction</h3>
+            <p id="prediction">Predicted next water level: Loading...</p>
+            <p id="predictionStatus">Predicted flood risk: Loading...</p>
+            <canvas id="waterLevelChart" width="400" height="200"></canvas>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2024 SHIELD Flood Protection System - Nguyen To Binh. All rights reserved</p>
+    </footer>
+</body>
+</html>
