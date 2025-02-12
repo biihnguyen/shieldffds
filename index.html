@@ -89,38 +89,142 @@
       let sensorValues = [];
       let timeLabels = [];
       let chart;
+      
+
 
       window.onload = function () {
-          const ctx = document.getElementById('waterLevelChart').getContext('2d');
-          chart = new Chart(ctx, {
-              type: 'line',
-              data: {
-                  labels: timeLabels,
-                  datasets: [{
-                      label: 'Water Level (cm)',
-                      data: sensorValues,
-                      borderColor: 'rgba(60,141,188,1)',
-                      backgroundColor: 'rgba(60,141,188,0.2)',
-                      fill: true,
-                      tension: 0.4
-                  }]
-              },
-              options: {
-                  scales: {
-                      y: { beginAtZero: true }
-                  }
-              }
-          });
+    const ctx = document.getElementById('waterLevelChart').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: timeLabels,
+            datasets: [{
+                label: 'Water Level (cm)',
+                data: sensorValues,
+                borderColor: 'rgba(60,141,188,1)',
+                backgroundColor: 'rgba(60,141,188,0.2)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    const ctxFlow = document.getElementById('flowRateChart').getContext('2d');
+    const flowChart = new Chart(ctxFlow, {
+        type: 'line',
+        data: {
+            labels: flowRateLabels,
+            datasets: [{
+                label: 'Flow Rate (L/s)',
+                data: flowRateValues,
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    const ctxAcceleration = document.getElementById('accelerationChart').getContext('2d');
+    const accelerationChart = new Chart(ctxAcceleration, {
+        type: 'line',
+        data: {
+            labels: accelerationLabels,
+            datasets: [{
+                label: 'Acceleration (m/s²)',
+                data: accelerationValues,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
+
+    const ctxPressure = document.getElementById('pressureChart').getContext('2d');
+    const pressureChart = new Chart(ctxPressure, {
+        type: 'line',
+        data: {
+            labels: pressureLabels,
+            datasets: [{
+                label: 'Pressure (Pa)',
+                data: pressureValues,
+                borderColor: 'rgba(255,99,132,1)',
+                backgroundColor: 'rgba(255,99,132,0.2)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+    });
 
           onValue(sensorRef, (snapshot) => {
+
+            let acceleration = parseFloat(snapshot.val().acceleration);
+if (!isNaN(acceleration)) {
+    if (accelerationValues.length >= 10) {
+        accelerationValues.shift();
+        accelerationLabels.shift();
+    }
+    accelerationValues.push(acceleration);
+    accelerationLabels.push(new Date().toLocaleTimeString());
+    accelerationChart.update();
+}
+
+            
+            let flowRate = parseFloat(snapshot.val().flowRate);
+    if (!isNaN(flowRate)) {
+        if (flowRateValues.length >= 10) {
+            flowRateValues.shift();
+            flowRateLabels.shift();
+        }
+        flowRateValues.push(flowRate);
+        flowRateLabels.push(new Date().toLocaleTimeString());
+        flowChart.update();
+    }
+
+    let pressure = parseFloat(snapshot.val().pressure);
+if (!isNaN(pressure)) {
+    if (pressureValues.length >= 10) {
+        pressureValues.shift();
+        pressureLabels.shift();
+    }
+    pressureValues.push(pressure);
+    pressureLabels.push(new Date().toLocaleTimeString());
+    pressureChart.update();
+}
+
+
     let sensorValue = parseFloat(snapshot.val());
     if (isNaN(sensorValue)) return;
 
     const currentTime = new Date().toLocaleTimeString();
     document.getElementById('sensorValue').innerText = `Current water level: ${sensorValue} cm`;
     const floodStatusElement = document.getElementById('floodStatus');
-    floodStatusElement.innerText = sensorValue >= 20 ? 'Flood risk status: HIGH' : 'Flood risk status: LOW';
-    floodStatusElement.style.color = sensorValue >= 20 ? 'red' : 'black';
+
+if (sensorValue < 10) {
+    floodStatusElement.innerText = 'Flood risk status: NORMAL';
+    floodStatusElement.style.color = 'green';
+} else if (sensorValue >= 10 && sensorValue < 30) {
+    floodStatusElement.innerText = 'Flood risk status: MILD WARNING';
+    floodStatusElement.style.color = 'blue';
+} else if (sensorValue >= 30 && sensorValue < 50) {
+    floodStatusElement.innerText = 'Flood risk status: MEDIUM WARNING';
+    floodStatusElement.style.color = 'orange';
+} else if (sensorValue >= 50 && sensorValue < 80) {
+    floodStatusElement.innerText = 'Flood risk status: HIGH WARNING';
+    floodStatusElement.style.color = 'red';
+} else if (sensorValue >= 80 && sensorValue < 100) {
+    floodStatusElement.innerText = 'Flood risk status: EMERGENCY ALARM';
+    floodStatusElement.style.color = 'darkred';
+} else {
+    floodStatusElement.innerText = 'Flood risk status: EXTREME WARNING';
+    floodStatusElement.style.color = 'purple';
+}
+
 
     if (sensorValues.length >= 10) {
         sensorValues.shift();
@@ -222,8 +326,61 @@
             <h3>AI Prediction</h3>
             <p id="prediction">Predicted next water level: Loading...</p>
             <p id="predictionStatus">Predicted flood risk: Loading...</p>
-            <canvas id="waterLevelChart" width="400" height="200"></canvas>
+        
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <!-- Water Level Chart -->
+                <div style="flex: 1; min-width: 300px;">
+                    <h3>Water Level Trend</h3>
+                    <canvas id="waterLevelChart" width="300" height="150"></canvas>
+                    <div style="display: flex; justify-content: space-between; gap: 20px;">
+                        <canvas id="pressureChart"></canvas>
+                        <canvas id="accelerationChart"></canvas>
+                    </div>
+                    
+            
+
+                </div>
+                
+                
+                <!-- Flow Rate Chart -->
+                <div style="flex: 1; min-width: 300px;">
+                    <h3>Flow Rate Trend</h3>
+                    <canvas id="flowRateChart" width="300" height="150"></canvas>
+                </div>
+
+                
+            </div>
         </section>
+        
+        <script>
+            let flowRateValues = [];
+            let flowRateLabels = [];
+            let flowChart;
+
+            let pressureValues = [];
+            let pressureLabels = [];
+            let pressureChart;
+
+            let accelerationValues = [];
+            let accelerationLabels = [];
+            let accelerationChart;
+
+            
+            window.onload = function () {
+                const waterCtx = document.getElementById('waterLevelChart').getContext('2d');
+                chart = new Chart(waterCtx, {
+                    type: 'line',
+                    data: { labels: timeLabels, datasets: [{ label: 'Water Level (cm)', data: sensorValues, borderColor: 'blue', backgroundColor: 'rgba(60,141,188,0.2)', fill: true, tension: 0.4 }] },
+                    options: { scales: { y: { beginAtZero: true } } }
+                });
+
+
+                
+
+        
+            };
+        </script>
+        
     </main>
     <footer>
         <p>&copy; 2024 SHIELD Flood Protection System - Nguyen To Binh. All rights reserved</p>
