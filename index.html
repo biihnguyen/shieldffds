@@ -6,6 +6,50 @@
     <meta name="description" content="SHIELD Flood Protection System">
     <title>SHIELD Flood Protection System</title>
     <style>
+        #compass {
+    width: 200px;
+    height: 200px;
+    border: 2px solid #007BFF;
+    border-radius: 50%;
+    position: absolute;
+    margin: 50px auto;
+    right: 1200px;
+}
+
+#needle {
+    position: relative;
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-bottom: 60px solid red;
+    top: 50%;
+    left: 50%;
+    transform-origin: 50% 100%;
+    transform: translate(-50%, -100%) rotate(0deg);
+}
+
+#center-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: black;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.direction {
+    position: absolute;
+    font-weight: bold;
+}
+
+.north { top: 5%; left: 50%; transform: translateX(-50%); }
+.south { bottom: 5%; left: 50%; transform: translateX(-50%); }
+.east { right: 5%; top: 50%; transform: translateY(-50%); }
+.west { left: 5%; top: 50%; transform: translateY(-50%); }
+
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f6f9;
@@ -84,13 +128,57 @@
 
       const app = initializeApp(firebaseConfig);
       const database = getDatabase(app);
-      const sensorRef = ref(database, 'sensorData');
 
+     const L3_directionRef = ref(database, 'L3_direction');
+     const L3_accelerationRef = ref(database, 'L3_acceleration');
+     const L3_flowspeedRef = ref(database, 'L3_flowspeed');
+     const L3_pressureRef = ref(database, 'L3_pressure');
+     const L3_waterlevelRef = ref(database, 'L3_waterlevel');
+     const L3_soilHumidRef = ref(database, 'L3_soilhumid');
+     const L3_temperatureRef = ref(database, 'L3_temperature');
+
+
+        function updateCompass(direction) {
+    let angle = (direction - 1) * 22.5; // Điều chỉnh nếu số hướng thay đổi
+    document.getElementById('needle').style.transform = `translate(-50%, -100%) rotate(${angle}deg)`;
+  }
+
+        onValue(L3_directionRef, (snapshot) => {
+    const direction = snapshot.val();
+    if (direction !== null) {
+      console.log("Compass Direction from Firebase:", direction);
+      updateCompass(direction);
+    }
+  });
+
+  onValue(L3_soilHumidRef, (snapshot) => {
+    const soilHumid = snapshot.val();
+    if (soilHumid !== null) {
+        document.getElementById('soilHumidValue').innerText = `Humidity: ${soilHumid}%`;
+    }
+});
+
+// Cập nhật giá trị nhiệt độ
+onValue(L3_temperatureRef, (snapshot) => {
+    const temperature = snapshot.val();
+    if (temperature !== null) {
+        document.getElementById('temperatureValue').innerText = `Temperature: ${temperature}°C`;
+    }
+});
+
+      
       let sensorValues = [];
       let timeLabels = [];
       let chart;
-      
 
+      let flowspeedLabels = [];
+      let flowspeedValues = [];
+      let pressureLabels = [];
+      let pressureValues = [];
+      let accelerationLabels = [];
+      let accelerationValues = [];
+
+      
 
       window.onload = function () {
     const ctx = document.getElementById('waterLevelChart').getContext('2d');
@@ -110,14 +198,14 @@
         options: { scales: { y: { beginAtZero: true } } }
     });
 
-    const ctxFlow = document.getElementById('flowRateChart').getContext('2d');
+    const ctxFlow = document.getElementById('flowspeedChart').getContext('2d');
     const flowChart = new Chart(ctxFlow, {
         type: 'line',
         data: {
-            labels: flowRateLabels,
+            labels: flowspeedLabels,
             datasets: [{
-                label: 'Flow Rate (L/s)',
-                data: flowRateValues,
+                label: 'Flow Speed (m/s)',
+                data: flowspeedValues,
                 borderColor: 'rgba(54, 162, 235, 1)',
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
                 fill: true,
@@ -161,70 +249,107 @@
         options: { scales: { y: { beginAtZero: true } } }
     });
 
-          onValue(sensorRef, (snapshot) => {
+// 🔥 Thêm các sự kiện listener mới ngay sau đây
+// Lắng nghe dữ liệu từ Firebase (Acceleration)
 
-            let acceleration = parseFloat(snapshot.val().acceleration);
-if (!isNaN(acceleration)) {
-    if (accelerationValues.length >= 10) {
-        accelerationValues.shift();
-        accelerationLabels.shift();
-    }
-    accelerationValues.push(acceleration);
-    accelerationLabels.push(new Date().toLocaleTimeString());
-    accelerationChart.update();
-}
+onValue(L3_accelerationRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;  
 
-            
-            let flowRate = parseFloat(snapshot.val().flowRate);
-    if (!isNaN(flowRate)) {
-        if (flowRateValues.length >= 10) {
-            flowRateValues.shift();
-            flowRateLabels.shift();
+    let acceleration = parseFloat(data);
+    if (!isNaN(acceleration)) {
+        if (accelerationValues.length >= 10) {
+            accelerationValues.shift();
+            accelerationLabels.shift();
         }
-        flowRateValues.push(flowRate);
-        flowRateLabels.push(new Date().toLocaleTimeString());
+        accelerationValues.push(acceleration);
+        accelerationLabels.push(new Date().toLocaleTimeString());
+        accelerationChart.update();
+    }
+});
+
+// Lắng nghe dữ liệu từ Firebase (Flow Speed)
+onValue(L3_flowspeedRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;  
+
+    let flowspeed = parseFloat(data);
+    if (!isNaN(flowspeed)) {
+        if (flowspeedValues.length >= 10) {
+            flowspeedValues.shift();
+            flowspeedLabels.shift();
+        }
+        flowspeedValues.push(flowspeed);
+        flowspeedLabels.push(new Date().toLocaleTimeString());
         flowChart.update();
     }
+});
 
-    let pressure = parseFloat(snapshot.val().pressure);
-if (!isNaN(pressure)) {
-    if (pressureValues.length >= 10) {
-        pressureValues.shift();
-        pressureLabels.shift();
+// Lắng nghe dữ liệu từ Firebase (Pressure)
+onValue(L3_pressureRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;  
+
+    let pressure = parseFloat(data);
+    if (!isNaN(pressure)) {
+        if (pressureValues.length >= 10) {
+            pressureValues.shift();
+            pressureLabels.shift();
+        }
+        pressureValues.push(pressure);
+        pressureLabels.push(new Date().toLocaleTimeString());
+        pressureChart.update();
     }
-    pressureValues.push(pressure);
-    pressureLabels.push(new Date().toLocaleTimeString());
-    pressureChart.update();
-}
+});
 
-
-    let sensorValue = parseFloat(snapshot.val());
+onValue(L3_waterlevelRef, (snapshot) => {
+    const sensorValue = parseFloat(snapshot.val()); // Lấy giá trị từ waterlevel
     if (isNaN(sensorValue)) return;
+
+    if (sensorValues.length >= 10) {
+        sensorValues.shift();
+        timeLabels.shift();
+    }
+    sensorValues.push(sensorValue);
+    timeLabels.push(new Date().toLocaleTimeString());
+
+    chart.update();
+    document.getElementById('sensorValue').innerText = `Current water level: ${sensorValue} cm`;
+
+    // Cập nhật trạng thái lũ lụt
+    const floodStatusElement = document.getElementById('floodStatus');
+    if (sensorValue < 10) {
+        floodStatusElement.innerText = 'Flood risk status: NORMAL';
+        floodStatusElement.style.color = 'green';
+    } else if (sensorValue < 30) {
+        floodStatusElement.innerText = 'Flood risk status: MILD WARNING';
+        floodStatusElement.style.color = 'blue';
+    } else if (sensorValue < 50) {
+        floodStatusElement.innerText = 'Flood risk status: MEDIUM WARNING';
+        floodStatusElement.style.color = 'orange';
+    } else if (sensorValue < 80) {
+        floodStatusElement.innerText = 'Flood risk status: HIGH WARNING';
+        floodStatusElement.style.color = 'red';
+    } else if (sensorValue < 100) {
+        floodStatusElement.innerText = 'Flood risk status: EMERGENCY ALARM';
+        floodStatusElement.style.color = 'darkred';
+    } else {
+        floodStatusElement.innerText = 'Flood risk status: EXTREME WARNING';
+        floodStatusElement.style.color = 'purple';
+    }
+
+    // Dự đoán bằng mô hình AI nếu có đủ dữ liệu
+    if (sensorValues.length > 5) trainAndPredict(sensorValues);
+});
+
+
+    sensorValue = parseFloat(snapshot.val());
+    if (isNaN(sensorValue)) return;
+
 
     const currentTime = new Date().toLocaleTimeString();
     document.getElementById('sensorValue').innerText = `Current water level: ${sensorValue} cm`;
     const floodStatusElement = document.getElementById('floodStatus');
-
-if (sensorValue < 10) {
-    floodStatusElement.innerText = 'Flood risk status: NORMAL';
-    floodStatusElement.style.color = 'green';
-} else if (sensorValue >= 10 && sensorValue < 30) {
-    floodStatusElement.innerText = 'Flood risk status: MILD WARNING';
-    floodStatusElement.style.color = 'blue';
-} else if (sensorValue >= 30 && sensorValue < 50) {
-    floodStatusElement.innerText = 'Flood risk status: MEDIUM WARNING';
-    floodStatusElement.style.color = 'orange';
-} else if (sensorValue >= 50 && sensorValue < 80) {
-    floodStatusElement.innerText = 'Flood risk status: HIGH WARNING';
-    floodStatusElement.style.color = 'red';
-} else if (sensorValue >= 80 && sensorValue < 100) {
-    floodStatusElement.innerText = 'Flood risk status: EMERGENCY ALARM';
-    floodStatusElement.style.color = 'darkred';
-} else {
-    floodStatusElement.innerText = 'Flood risk status: EXTREME WARNING';
-    floodStatusElement.style.color = 'purple';
-}
-
 
     if (sensorValues.length >= 10) {
         sensorValues.shift();
@@ -235,9 +360,9 @@ if (sensorValue < 10) {
     chart.update();
 
     if (sensorValues.length > 5) trainAndPredict(sensorValues); // 🔥 FIXED: Call the correct function
-});
+};
 
-      };
+      ;
 
       async function trainAndPredict(sensorValues) {
     if (sensorValues.length < 5) {
@@ -269,8 +394,9 @@ if (sensorValue < 10) {
         model.add(tf.layers.dense({ units: 1 }));
         model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
 
-        const xs = tf.tensor(sensorValues.slice(0, -1).map((_, i) => [normalize(i)]));
-        const ys = tf.tensor(sensorValues.slice(1).map(value => [normalize(value)]));
+        const xs = tf.tensor(sensorValues.map((value, i) => [normalize(i)])); 
+        const ys = tf.tensor(sensorValues.map(value => [normalize(value)]));
+
 
         await model.fit(xs, ys, { epochs: 50 });
 
@@ -282,7 +408,9 @@ if (sensorValue < 10) {
     let lastValue = normalize(sensorValues[sensorValues.length - 1]);
 
     for (let i = 1; i <= 10; i++) {
-        const prediction = model.predict(tf.tensor([[lastValue]])).dataSync()[0];
+        const prediction = model.predict(tf.tensor([[normalize(sensorValues.length)]]))
+    .dataSync()[0];
+
         lastValue = prediction;
         futureValues.push(denormalize(prediction));
     }
@@ -313,15 +441,38 @@ if (sensorValue < 10) {
         <a onclick="showSection('benefits')">Benefits</a>
     </nav>
     <main>
+
+        <h3>Flood Sensor Map</h3>
+            <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1hpRNfF9gg34DO1SF3DpfSbbSkjKc7KI&ehbc=2E312F" 
+                    width="100%" height="600" style="border:0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+            </iframe>
+            
         <section id="monitoring" class="monitoring">
+            <div id="compass">
+                <div id="needle"></div>
+                <div id="center-dot"></div>
+                <div class="direction north">N</div>
+                <div class="direction south">S</div>
+                <div class="direction east">E</div>
+                <div class="direction west">W</div>
+            </div>
+
+            <div id="sensor-container" style="display: flex; gap: 20px; margin-top: 20px;">
+                <div id="soil-humid-box" style="padding: 15px; border: 1px solid #007BFF; border-radius: 8px; text-align: center; background: #e7f3fe;">
+                    <h3>Soil Humidity</h3>
+                    <p id="soilHumidValue">Loading...</p>
+                </div>
+                <div id="temperature-box" style="padding: 15px; border: 1px solid #007BFF; border-radius: 8px; text-align: center; background: #e7f3fe;">
+                    <h3>Temperature</h3>
+                    <p id="temperatureValue">Loading...</p>
+                </div>
+            </div>
+            
+            
             <h2>Flood Monitoring Dashboard</h2>
             <p id="sensorValue">Current water level: Loading...</p>
             <p id="floodStatus">Flood risk status NOW: Loading...</p>
-        
-            <h3>Flood Sensor Map</h3>
-            <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1hpRNfF9gg34DO1SF3DpfSbbSkjKc7KI&ehbc=2E312F" 
-                    width="100%" height="250" style="border:0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
-            </iframe>
+    
         
             <h3>AI Prediction</h3>
             <p id="prediction">Predicted next water level: Loading...</p>
@@ -344,42 +495,14 @@ if (sensorValue < 10) {
                 
                 <!-- Flow Rate Chart -->
                 <div style="flex: 1; min-width: 300px;">
-                    <h3>Flow Rate Trend</h3>
-                    <canvas id="flowRateChart" width="300" height="150"></canvas>
+                    <h3>Flow Speed Trend</h3>
+                    <canvas id="flowspeedChart" width="300" height="150"></canvas>
                 </div>
 
                 
             </div>
         </section>
         
-        <script>
-            let flowRateValues = [];
-            let flowRateLabels = [];
-            let flowChart;
-
-            let pressureValues = [];
-            let pressureLabels = [];
-            let pressureChart;
-
-            let accelerationValues = [];
-            let accelerationLabels = [];
-            let accelerationChart;
-
-            
-            window.onload = function () {
-                const waterCtx = document.getElementById('waterLevelChart').getContext('2d');
-                chart = new Chart(waterCtx, {
-                    type: 'line',
-                    data: { labels: timeLabels, datasets: [{ label: 'Water Level (cm)', data: sensorValues, borderColor: 'blue', backgroundColor: 'rgba(60,141,188,0.2)', fill: true, tension: 0.4 }] },
-                    options: { scales: { y: { beginAtZero: true } } }
-                });
-
-
-                
-
-        
-            };
-        </script>
         
     </main>
     <footer>
