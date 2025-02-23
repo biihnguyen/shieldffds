@@ -50,64 +50,66 @@
 .east { right: 5%; top: 50%; transform: translateY(-50%); }
 .west { left: 5%; top: 50%; transform: translateY(-50%); }
 
-#small-box-L2 {
-    position: absolute;
-    bottom: 50px;  /* Điều chỉnh vị trí dọc */
-    left: 600px;    /* Tùy chỉnh vị trí ngang */
-    width: 100px;   /* Tăng chiều rộng */
-    height: 45px;   /* Tăng chiều cao */
+/* Định dạng cho container chứa các hộp */
+/* Định dạng cho container chứa các hộp */
+.container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start; /* Không căn giữa theo chiều dọc */
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 1000px;
+    min-height: 200px; /* Đảm bảo container đủ cao */
+    margin: 0 auto;
+    border: 1px solid red;
+}
+
+
+/* Điều chỉnh kích thước và hiệu ứng cho #small-box-L2 và #control-box */
+#small-box-L2, #control-box {
+    flex-basis: calc(33.33% - 20px);
+    width: 140px;
+    max-width: 100%; /* Đảm bảo không vượt quá container */
+    height: 50px;
     background-color: #007BFF;
     color: white;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 16px;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 17px;
+    font-weight: 600;
     text-align: center;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease-in-out;
+    border: 2px solid transparent;
 }
 
-#small-box-L2 a {
+/* Kiểm tra liên kết có bị ảnh hưởng không */
+#small-box-L2 a, #control-box a {
     text-decoration: none;
     color: white;
     font-weight: bold;
 }
 
-#small-box-L2:hover {
+/* Hiệu ứng hover */
+#small-box-L2:hover, #control-box:hover {
     background-color: #0056b3;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Đổ bóng sâu hơn khi hover */
+    transform: translateY(-2px); /* Nổi lên nhẹ */
 }
 
-/* Ô điều khiển */
-#control-box {
-    position: absolute;
-    bottom: 50px;  /* Điều chỉnh vị trí dọc */
-    left: 800px;    /* Tùy chỉnh vị trí ngang */
-    width: 100px;   /* Tăng chiều rộng giống L2 */
-    height: 45px;   /* Tăng chiều cao giống L2 */
-    background-color: #007BFF;
-    color: white;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 16px;
-    text-align: center;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+/* Hiệu ứng khi nhấn (active) */
+#small-box-L2:active, #control-box:active {
+    background-color: #003f7f; /* Màu tối hơn khi nhấn */
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2); /* Đổ bóng giảm xuống */
+    transform: translateY(1px); /* Nhấn xuống nhẹ */
 }
 
-#control-box a {
-    text-decoration: none;
-    color: white;
-    font-weight: bold;
-}
-
-#control-box:hover {
-    background-color: #0056b3;
-}
 
 
 
@@ -392,22 +394,22 @@ onValue(L3_waterlevelRef, (snapshot) => {
     // Cập nhật trạng thái lũ lụt
     const floodStatusElement = document.getElementById('floodStatus');
     if (sensorValue < 10) {
-        floodStatusElement.innerText = 'Flood risk status: NORMAL';
+        floodStatusElement.innerText = 'Flood risk status: LEVEL 1';
         floodStatusElement.style.color = 'green';
     } else if (sensorValue < 30) {
-        floodStatusElement.innerText = 'Flood risk status: MILD WARNING';
+        floodStatusElement.innerText = 'Flood risk status: LEVEL 2';
         floodStatusElement.style.color = 'blue';
     } else if (sensorValue < 50) {
-        floodStatusElement.innerText = 'Flood risk status: MEDIUM WARNING';
+        floodStatusElement.innerText = 'Flood risk status: LEVEL 3';
         floodStatusElement.style.color = 'orange';
     } else if (sensorValue < 80) {
-        floodStatusElement.innerText = 'Flood risk status: HIGH WARNING';
+        floodStatusElement.innerText = 'Flood risk status: LEVEL 4';
         floodStatusElement.style.color = 'red';
     } else if (sensorValue < 100) {
-        floodStatusElement.innerText = 'Flood risk status: EMERGENCY ALARM';
+        floodStatusElement.innerText = 'Flood risk status: LEVEL 5';
         floodStatusElement.style.color = 'darkred';
     } else {
-        floodStatusElement.innerText = 'Flood risk status: EXTREME WARNING';
+        floodStatusElement.innerText = 'Flash floods and landslides are occurring at node L3';
         floodStatusElement.style.color = 'purple';
     }
 
@@ -519,14 +521,6 @@ onValue(L3_waterlevelRef, (snapshot) => {
             <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1hpRNfF9gg34DO1SF3DpfSbbSkjKc7KI&ehbc=2E312F" 
                     width="100%" height="600" style="border:0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
             </iframe>
-
-            <div id="small-box-L2">
-                <a href="https://biihnguyen.github.io/floodprotection/" target="_blank">L2</a>
-            </div>
-
-            <div id="control-box">
-                <a href="https://nmq123.github.io/RemoteNodeControl/?fbclid=IwY2xjawIoG5RleHRuA2FlbQIxMAABHTZAS4T-G6mEuV7RsKlXk_8PQFHEY7U5bRnleYzDFBsZOvg3t7iyR682Eg_aem_Ccjgbq0htLe4Xz5OcJ99gg" target="_blank">Control</a>
-            </div>
             
             
 
@@ -538,6 +532,14 @@ onValue(L3_waterlevelRef, (snapshot) => {
                 <div class="direction south">S</div>
                 <div class="direction east">E</div>
                 <div class="direction west">W</div>
+            </div>
+
+            <div id="small-box-L2">
+                <a href="https://biihnguyen.github.io/floodprotection/" target="_blank">L2</a>
+            </div>
+
+            <div id="control-box">
+                <a href="https://nmq123.github.io/RemoteNodeControl/?fbclid=IwY2xjawIoG5RleHRuA2FlbQIxMAABHTZAS4T-G6mEuV7RsKlXk_8PQFHEY7U5bRnleYzDFBsZOvg3t7iyR682Eg_aem_Ccjgbq0htLe4Xz5OcJ99gg" target="_blank">Control</a>
             </div>
 
             <div id="sensor-container" style="display: flex; gap: 20px; margin-top: 20px;">
