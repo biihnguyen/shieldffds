@@ -50,6 +50,70 @@
 .east { right: 5%; top: 50%; transform: translateY(-50%); }
 .west { left: 5%; top: 50%; transform: translateY(-50%); }
 
+#small-box-L2 {
+    position: absolute;
+    bottom: 50px;  /* Điều chỉnh vị trí dọc */
+    left: 600px;    /* Tùy chỉnh vị trí ngang */
+    width: 100px;   /* Tăng chiều rộng */
+    height: 45px;   /* Tăng chiều cao */
+    background-color: #007BFF;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 16px;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+#small-box-L2 a {
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+}
+
+#small-box-L2:hover {
+    background-color: #0056b3;
+}
+
+/* Ô điều khiển */
+#control-box {
+    position: absolute;
+    bottom: 50px;  /* Điều chỉnh vị trí dọc */
+    left: 800px;    /* Tùy chỉnh vị trí ngang */
+    width: 100px;   /* Tăng chiều rộng giống L2 */
+    height: 45px;   /* Tăng chiều cao giống L2 */
+    background-color: #007BFF;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 16px;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+#control-box a {
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+}
+
+#control-box:hover {
+    background-color: #0056b3;
+}
+
+
+
+
+
+
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f6f9;
@@ -455,6 +519,16 @@ onValue(L3_waterlevelRef, (snapshot) => {
             <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1hpRNfF9gg34DO1SF3DpfSbbSkjKc7KI&ehbc=2E312F" 
                     width="100%" height="600" style="border:0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
             </iframe>
+
+            <div id="small-box-L2">
+                <a href="https://biihnguyen.github.io/floodprotection/" target="_blank">L2</a>
+            </div>
+
+            <div id="control-box">
+                <a href="https://nmq123.github.io/RemoteNodeControl/?fbclid=IwY2xjawIoG5RleHRuA2FlbQIxMAABHTZAS4T-G6mEuV7RsKlXk_8PQFHEY7U5bRnleYzDFBsZOvg3t7iyR682Eg_aem_Ccjgbq0htLe4Xz5OcJ99gg" target="_blank">Control</a>
+            </div>
+            
+            
 
         <section id="monitoring" class="monitoring">
             <div id="compass">
