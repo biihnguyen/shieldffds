@@ -50,6 +50,72 @@
 .east { right: 5%; top: 50%; transform: translateY(-50%); }
 .west { left: 5%; top: 50%; transform: translateY(-50%); }
 
+/* Định dạng cho container chứa các hộp */
+/* Định dạng cho container chứa các hộp */
+.container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start; /* Không căn giữa theo chiều dọc */
+    gap: 20px;
+    flex-wrap: wrap;
+    width: 100%;
+    max-width: 1000px;
+    min-height: 200px; /* Đảm bảo container đủ cao */
+    margin: 0 auto;
+    border: 1px solid red;
+}
+
+
+/* Điều chỉnh kích thước và hiệu ứng cho #small-box-L2 và #control-box */
+#small-box-L2, #control-box {
+    margin-bottom: 50px;
+    flex-basis: calc(25% - 20px);
+    width: 140px;
+    max-width: 100%;
+    height: 50px;
+    background-color: transparent; /* Xóa màu nền */
+    color: black!important; /* Đổi màu chữ nếu cần */
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 17px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease-in-out;
+    border: 2px solid #007BFF; /* Đặt viền xanh */
+}
+
+
+/* Kiểm tra liên kết có bị ảnh hưởng không */
+#small-box-L2 a, #control-box a {
+    text-decoration: none;
+    color: black;
+    font-weight: bold;
+}
+
+/* Hiệu ứng hover */
+#small-box-L2:hover, #control-box:hover {
+    background-color: #0056b3;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Đổ bóng sâu hơn khi hover */
+    transform: translateY(-2px); /* Nổi lên nhẹ */
+}
+
+/* Hiệu ứng khi nhấn (active) */
+#small-box-L2:active, #control-box:active {
+    background-color: #003f7f; /* Màu tối hơn khi nhấn */
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2); /* Đổ bóng giảm xuống */
+    transform: translateY(1px); /* Nhấn xuống nhẹ */
+}
+
+
+
+
+
 
 
         body {
